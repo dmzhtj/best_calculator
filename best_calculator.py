@@ -56,7 +56,7 @@ def calculate(expression):
 def main():
     sys.set_int_max_str_digits(666666)
     while True:
-        choice = eg.choicebox("请选择你要使用的功能", "功能选择", ["基本运算","解方程","开方", "绘制函数图像（线性）","历史记录","删除历史记录","退出"])
+        choice = eg.choicebox("请选择你要使用的功能", "功能选择", ["基本运算","解方程","开方", "绘制函数图像","历史记录","删除历史记录","退出"])
 
         if choice == "基本运算":
             while True:
@@ -115,15 +115,22 @@ def main():
             except ValueError:
                 eg.exceptionbox("输入错误，请输入有效的数字。")
 
-        elif choice == "绘制函数图像（线性）":
+        elif choice == "绘制函数图像":
             x = np.linspace(-10, 10, 100)  # 定义x轴上的数据点
             try:
-                k = float(eg.enterbox("请输入你要绘制的线性函数的k（格式为y=kx+b）：", "线性函数图像"))
-                b = float(eg.enterbox("请输入你要绘制的线性函数的b（格式为y=kx+b）：", "线性函数图像"))
-            except ValueError:
+                list1 = ["a","b","c","d","p1","p2","p3"]
+                inpt = eg.multenterbox("请输入你要绘制的函数的参数（格式为：y=ax^p1+bx^p2+cx^p3+d）：", "函数图像",list1)
+                a=float(inpt[0])
+                b=float(inpt[1])
+                c=float(inpt[2])
+                d=float(inpt[3])
+                p1=float(inpt[4])
+                p2=float(inpt[5])   
+                p3=float(inpt[6])
+            except:
                 eg.exceptionbox("输入错误，请输入有效的数字。")
                 continue
-            y = k*x+b
+            y = a*x**p1 + b*x**p2 + c*x**p3 + d  # 定义y轴上的数据点
             plt.plot(x, y)  # 绘制函数图像
             plt.title('Linear Function Graph')  # 添加标题
             plt.xlabel('x')  # 添加x轴标签
@@ -135,6 +142,14 @@ def main():
                 f = open("calculator_history.cht", "r")
                 eg.textbox("历史纪录如下：(超过十位，历史记录会死机，请打开calculator_history.cht文件查看)", "历史记录", f.read())
                 f.close()
+            except:
+                eg.exceptionbox("历史记录出问题啦~(也能是没有。。。)")
+        elif choice == "删除历史记录":
+            try:
+                f = open("calculator_history.cht", "w")
+                f.write("")
+                f.close()
+                eg.msgbox("历史记录已清空", "提示")
             except:
                 eg.exceptionbox("历史记录出问题啦~(也能是没有。。。)")
         else:
