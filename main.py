@@ -60,7 +60,7 @@ def calculate(expression):
 
 def main():
     current_path = os.path.dirname(__file__)
-    ffcwd = ";"+current_path + "\\ffmpeg-7.0.2-full_build\\bin"
+    ffcwd = ";"+current_path + "\\ffmpeg\\bin"
     os.environ['path'] = os.environ.get('path')+ffcwd
     sys.set_int_max_str_digits(666666)
     while True:
