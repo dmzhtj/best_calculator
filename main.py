@@ -4,6 +4,10 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import crex.crex as crex
+from PIL import Image
+import os
+from moviepy.editor import *
+import ffmpeg
 
 def classify_equation(equation_input):
     """
@@ -55,9 +59,12 @@ def calculate(expression):
         eg.exceptionbox(f"输入错误: {e}")
 
 def main():
+    current_path = os.path.dirname(__file__)
+    ffcwd = ";"+current_path + "\\ffmpeg-7.0.2-full_build\\bin"
+    os.environ['path'] = os.environ.get('path')+ffcwd
     sys.set_int_max_str_digits(666666)
     while True:
-        choice = eg.choicebox("请选择你要使用的功能", "功能选择", ["基本运算","解方程","开方", "绘制函数图像","加解密器","历史记录","删除历史记录","退出"])
+        choice = eg.choicebox("请选择你要使用的功能", "功能选择", ["基本运算","解方程","开方", "绘制函数图像","加解密器","格式转换器","历史记录","删除历史记录","退出"])
 
         if choice == "基本运算":
             while True:
@@ -155,6 +162,41 @@ def main():
                 eg.exceptionbox("历史记录出问题啦~(也能是没有。。。)")
         elif choice == "加解密器":
             crex.main()
+        elif choice == "格式转换器":
+            while True:
+                choice = eg.buttonbox("请选择转换类型：","转换类型选择",choices=("视频", "音频", "图片", "退出"))
+                if choice == "视频":
+                    try:
+                        flocal = eg.fileopenbox("请选择要转换的文件：", "选择文件")
+                        video = VideoFileClip(flocal)
+                        output = video.copy()
+                        optname = eg.enterbox("请输入转换后的文件名（包含扩展名）：", "文件名")
+                        output.write_videofile(optname,temp_audiofile="temp-audio.m4a", remove_temp=True, codec="libx264", audio_codec="aac")
+                        eg.msgbox("转换完成！", "提示")
+                    except:
+                        eg.exceptionbox("转换失败，请检查文件格式是否正确。")
+                elif choice == "音频":
+                    try:
+                        flocal = eg.fileopenbox("请选择要转换的文件：", "选择文件")
+                        optname = eg.enterbox("请输入转换后的文件名（包含扩展名）：", "文件名")
+                        ffmpeg.input(str(flocal)).output(optname).run()
+                        eg.msgbox("转换完成！", "提示")
+                    except:
+                        eg.exceptionbox("转换失败，请检查文件格式是否正确。")
+                elif choice == "图片":
+                    try:
+                        flocal = eg.fileopenbox("请选择要转换的文件：", "选择文件")
+                        optname = eg.enterbox("请输入转换后的文件名（包含扩展名）：", "文件名")
+                        im = Image.open(flocal)
+                        im.save(optname)
+                        eg.msgbox("转换完成！", "提示")
+                    except:
+                        eg.exceptionbox("转换失败，请检查文件格式是否正确。")
+                else:
+                    if eg.buttonbox("确定要退出格式转换器吗？", "退出确认", ["是", "否"]) == "是":
+                        break
+                    else:
+                        pass
         else:
             if eg.buttonbox("确定要退出吗？", "退出确认", ["是", "否"]) == "是":
                 break
