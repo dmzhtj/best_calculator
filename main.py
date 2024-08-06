@@ -1,13 +1,12 @@
 import easygui as eg
 from sympy import *
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
 import crex.crex as crex
 from PIL import Image
 import os
 from moviepy.editor import *
 import ffmpeg
+import graph.graph as graph
 
 def classify_equation(equation_input):
     """
@@ -124,27 +123,7 @@ def main():
                 eg.exceptionbox("输入错误，请输入有效的数字。")
 
         elif choice == "绘制函数图像":
-            x = np.linspace(-10, 10, 100)  # 定义x轴上的数据点
-            try:
-                list1 = ["a","b","c","d","p1","p2","p3"]
-                inpt = eg.multenterbox("请输入你要绘制的函数的参数（格式为：y=ax^p1+bx^p2+cx^p3+d）：", "函数图像",list1)
-                a=float(inpt[0])
-                b=float(inpt[1])
-                c=float(inpt[2])
-                d=float(inpt[3])
-                p1=float(inpt[4])
-                p2=float(inpt[5])   
-                p3=float(inpt[6])
-            except:
-                eg.exceptionbox("输入错误，请输入有效的数字。")
-                continue
-            y = a*x**p1 + b*x**p2 + c*x**p3 + d  # 定义y轴上的数据点
-            plt.plot(x, y)  # 绘制函数图像
-            plt.title('Linear Function Graph')  # 添加标题
-            plt.xlabel('x')  # 添加x轴标签
-            plt.ylabel('y')  # 添加y轴标签
-
-            plt.show()  # 显示图像
+            graph.main()
         elif choice == "历史记录":
             try:
                 f = open("calculator_history.cht", "r")
