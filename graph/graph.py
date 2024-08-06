@@ -1,127 +1,112 @@
 import tkinter as tk
-import easygui as eg
-import numpy as np
+from tkinter import ttk, scrolledtext
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+import sympy as sp
 import re
 
 # 设置matplotlib以使用支持中文的字体
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体为黑体
 plt.rcParams['axes.unicode_minus'] = False    # 解决负号'-'显示为方块的问题
 
-def plot_functions():
+def main():
     def draw_plot():
+        plot_type = plot_type_var.get()
         functions_str = function_entry.get("1.0", tk.END).strip()
 
         # 清空之前的图形
-        for widget in frame.winfo_children():
+        for widget in plot_frame.winfo_children():
             widget.destroy()
 
         # 创建Matplotlib图形
-        fig = plt.figure()
-        ax = fig.add_subplot(111)  # 仅创建2D子图
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111, projection='3d' if plot_type == "3D" else None)
 
         try:
-            # 按行分割函数表达式
             functions = functions_str.splitlines()
+            
+            if plot_type == "2D":
+                for func_str in functions:
+                    func_str = func_str.strip()
+                    if not func_str:
+                        continue
+                    match = re.match(r"y\s*=\s*(.*)", func_str)
+                    if match:
+                        expression = match.group(1)
+                        x = np.linspace(-10, 10, 100)
+                        y = eval(expression, {'__builtins__': None}, {'x': x})
+                        ax.plot(x, y, label=expression)
 
-            labels = []  # 用于存储艺术家的标签
-            for func_str in functions:
-                func_str = func_str.strip()
-                if not func_str:
-                    continue
-
-                # 提取函数的左侧和右侧
-                match = re.match(r"y\s*=\s*(.*)", func_str)
-                if match:
-                    expression = match.group(1)
-                    x = np.linspace(-10, 10, 100)
-                    y = eval(expression, {'__builtins__': None}, {'x': x})
-                    line, = ax.plot(x, y, label=expression)  # 指定标签为函数表达式
-                    labels.append(line.get_label())  # 将标签添加到列表中
-
-            if labels:  # 如果有艺术家具有标签，则生成图例
+                ax.grid(True)
                 ax.legend()
-            else:
-                ax.set_title('2D函数图像')  # 如果没有艺术家具有标签，则不生成图例
+                ax.set_xlabel('X轴')
+                ax.set_ylabel('Y轴')
+                ax.set_title('2D函数图像')
 
-            ax.grid(True)
-            ax.set_xlabel('X轴')
-            ax.set_ylabel('Y轴')
+            elif plot_type == "3D":
+                x = np.arange(-5, 5, 0.1)
+                y = np.arange(-5, 5, 0.1)
+                X, Y = np.meshgrid(x, y)
+
+                for func_str in functions:
+                    func_str = func_str.strip()
+                    if not func_str:
+                        continue
+                    match = re.match(r"z\s*=\s*(.*)", func_str)
+                    if match:
+                        z_expr = match.group(1)
+                        z_sympy = sp.sympify(z_expr)
+                        Z = sp.lambdify((sp.symbols('x y')), z_sympy)(X, Y)
+                        if Z.ndim != 2:
+                            raise ValueError(f"函数表达式 '{z_expr}' 计算结果 Z 的维度不符合要求。")
+                        ax.plot_surface(X, Y, Z, alpha=0.5, cmap="winter")
+
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+                ax.set_zlabel("z")
+                ax.set_title("3D 函数图像")
 
         except Exception as e:
-            eg.exceptionbox("输入的表达式有误，请重新输入。\错误信息：{str(e)}")
+            ax.text(0.5, 0.5, f"错误：{e}", ha='center', va='center', transform=ax.transAxes)
 
         # 将Matplotlib图形嵌入到Tkinter窗口中
-        canvas = FigureCanvasTkAgg(fig, master=frame)
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-    # 创建Tkinter窗口
+    # 创建主窗口
     root = tk.Tk()
-    root.title("绘制函数图像")
+    root.title("函数图像绘制")
 
     # 创建顶层框架
-    frame = tk.Frame(root)
-    frame.pack(expand=True, fill=tk.BOTH)
+    main_frame = ttk.Frame(root, padding="3")
+    main_frame.pack(expand=True, fill=tk.BOTH)
 
-    # 创建函数输入框
-    function_label = tk.Label(frame, text="请输入函数表达式(每行一个，例如 y = x**2)：")
+    # 输入函数表达式
+    function_label = ttk.Label(main_frame, text="请输入函数表达式（每行一个）:")
     function_label.pack(pady=10)
-    function_entry = tk.Text(frame, width=50, height=10)
+    function_entry = scrolledtext.ScrolledText(main_frame, width=60, height=10)
     function_entry.pack(pady=10)
 
-    # 创建绘制按钮
-    draw_button = tk.Button(frame, text="绘制图像", command=draw_plot)
-    draw_button.pack(pady=10)
+    # 绘图类型选择
+    plot_type_var = tk.StringVar(value="2D")
+    plot_type_label = ttk.Label(main_frame, text="请选择绘制类型：")
+    plot_type_label.pack(pady=10)
+    plot_type_2d = ttk.Radiobutton(main_frame, text="2D", variable=plot_type_var, value="2D")
+    plot_type_2d.pack(anchor=tk.W)
+    plot_type_3d = ttk.Radiobutton(main_frame, text="3D", variable=plot_type_var, value="3D")
+    plot_type_3d.pack(anchor=tk.W)
 
+    # 绘图按钮
+    plot_button = ttk.Button(main_frame, text="绘制图像", command=draw_plot)
+    plot_button.pack(pady=10)
+
+    # 图形绘制区域
+    plot_frame = ttk.Frame(main_frame)
+    plot_frame.pack(expand=True, fill=tk.BOTH)
+
+    # 运行主循环
     root.mainloop()
-
-def plot_3d_function():
-    try:
-        # 获取用户输入的函数表达式
-        func_expr = eg.enterbox("请输入一个函数表达式（例如：Z = X**2 + Y**2）：")
-
-        # 确保输入的表达式包含'Z ='
-        if not func_expr.startswith('Z ='):
-            eg.msgbox("函数表达式必须以'Z ='开头。")
-            return
-
-        # 解析函数表达式以获取Z的表达式
-        z_expr = func_expr[3:].strip()
-
-        plt.figure()
-        ax = plt.axes(projection="3d")
-
-        x = np.arange(-5, 5, 0.1)
-        y = np.arange(-5, 5, 0.1)
-        X, Y = np.meshgrid(x, y)  # 生成绘制3D图形所需的网络数据
-
-        # 使用用户输入的表达式计算Z值
-        Z = eval(z_expr, {'X': X, 'Y': Y})
-
-        ax.plot_surface(X, Y, Z, alpha=0.5, cmap="winter")  # 生成表面，alpha用于控制透明度
-        ax.set_xlabel("X")  # 设置X、Y、Z 坐标范围
-        ax.set_xlim(-6, 6)   # 设置X、Y、Z 轴
-        ax.set_ylabel("Y")
-        ax.set_ylim(-6, 6)
-        ax.set_zlabel("Z")
-        plt.show()
-    
-    except Exception as e:
-        eg.exceptionbox("出错啦！\错误信息：{str(e)}")
-
-def main():
-    while True:
-        choice = eg.buttonbox("请选择您要进行的操作：", choices=["绘制2D函数图像", "绘制3D函数图像", "退出"])
-        if choice == "绘制3D函数图像":
-            plot_3d_function()
-        elif choice == "绘制2D函数图像":
-            plot_functions()
-        else:
-            inpt = eg.buttonbox("确定要退出吗？", title="退出", choices=["是", "否"])
-            if inpt == "是":
-                break
-
-if __name__ == "__main__":
+if __name__ == "__main__": 
     main()
